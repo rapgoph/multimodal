@@ -9,7 +9,7 @@ def main():
     st.title("Business & Process Analytics Lab: Multimodal Emotion Recognition System")
 
     # Section: Video Upload
-    st.header("Upload a Video for Transcription")
+    st.header("Upload a Video for emotion analysis")
     video_file = st.file_uploader("Upload your video file", type=["mp4", "mov", "avi"])
 
     if video_file is not None:
