@@ -3,3 +3,5 @@ numpy
 pillow
 whisper-timestamped
 pandas
+fer
+moviepy
