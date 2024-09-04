@@ -2,6 +2,7 @@ import streamlit as st
 import whisper_timestamped as whisper
 import tempfile
 import pandas as pd
+import subprocess
 
 def main():
     # Application Header
@@ -25,25 +26,29 @@ def main():
         transcribe_video(tmp_video_path)
 
 def transcribe_video(video_path):
-    # Load the audio from the video
-    audio = whisper.load_audio(video_path)
-    
-    # Load the Whisper model
-    model = whisper.load_model("medium", device="cpu")
-    
-    # Transcribe the video/audio
-    result = whisper.transcribe(model, audio)
-    
-    # Prepare data for display
-    segments_data = [{'text': seg['text'], 'start': seg['start'], 'end': seg['end'], 'confidence': seg['confidence']}
-                     for seg in result['segments']]
+    try:
+        # Load the audio from the video
+        audio = whisper.load_audio(video_path)
+        
+        # Load the Whisper model
+        model = whisper.load_model("medium", device="cpu")
+        
+        # Transcribe the video/audio
+        result = whisper.transcribe(model, audio)
+        
+        # Prepare data for display
+        segments_data = [{'text': seg['text'], 'start': seg['start'], 'end': seg['end'], 'confidence': seg['confidence']}
+                         for seg in result['segments']]
 
-    segments_df = pd.DataFrame(segments_data)
-    st.write(segments_df)
+        segments_df = pd.DataFrame(segments_data)
+        st.write(segments_df)
 
-    # Option to download transcription as Excel
-    excel_file = convert_df_to_excel(segments_df)
-    st.download_button(label="Download Transcription as Excel", data=excel_file, file_name="transcription.xlsx")
+        # Option to download transcription as Excel
+        excel_file = convert_df_to_excel(segments_df)
+        st.download_button(label="Download Transcription as Excel", data=excel_file, file_name="transcription.xlsx")
+    except subprocess.CalledProcessError as e:
+        st.error("An error occurred while processing the audio. Please ensure FFmpeg is installed and accessible.")
+        st.error(f"Error details: {e}")
 
 def convert_df_to_excel(segments_df):
     # Convert dataframe to Excel format for download
