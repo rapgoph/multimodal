@@ -1,77 +1,33 @@
+
 import streamlit as st
 import numpy as np
 import pandas as pd
 from fer import FER
-from moviepy.editor import VideoFileClip
-import tempfile
+from PIL import Image
+import cv2
 
-# Application Header
-st.title("Business and Process Analytics Lab: Multimodal Emotion Recognition Analysis")
 
-# Upload video file
-video_file = st.file_uploader("Upload your video file", type=["mp4", "mov", "avi"])
 
-# Button to detect facial emotions
-if video_file is not None:
-    # Display the uploaded video
-    st.video(video_file)
 
-    # Save the uploaded video to a temporary file
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp_file:
-        tmp_file.write(video_file.read())
-        video_path = tmp_file.name
-
-    if st.button("Detect Facial Emotions"):
-        with st.spinner("Processing... Please wait."):
-            # Process the video to get emotion probabilities
-            emotions_df = process_video(video_path)
-
-        # Display the emotion probabilities
-        if emotions_df is not None:
-            st.header("Emotion Probability Scores per Second")
-            st.dataframe(emotions_df)
-            st.download_button(
-                label="Download Emotion Data as CSV",
-                data=emotions_df.to_csv(index=False),
-                file_name="emotion_probabilities.csv",
-                mime="text/csv",
-            )
-
-def process_video(video_path):
-    # Load the video using MoviePy
-    video_clip = VideoFileClip(video_path)
-
-    # Initialize the face detection detector
-    face_detector = FER(mtcnn=True)
-
-    # Initialize DataFrame to store emotions and time
-    emotions_data = []
-
-    # Process each frame in the video
-    for frame_number, frame in enumerate(video_clip.iter_frames()):
-        # Calculate the time in seconds
-        time_seconds = frame_number / video_clip.fps
-
-        # Detect emotions in the frame
-        result = face_detector.detect_emotions(frame)
-
-        for face in result:
-            emotions = face["emotions"]
-            emotions["Time (s)"] = time_seconds  # Add time information to emotions
-            emotions_data.append(emotions)
-
-    # Create DataFrame from emotions data
-    if emotions_data:
-        emotions_df = pd.DataFrame(emotions_data)
-
-        # Rearrange columns so that "Time (s)" is the first column
-        columns = ["Time (s)"] + [col for col in emotions_df.columns if col != "Time (s)"]
-        emotions_df = emotions_df[columns]
-
-        return emotions_df
+@st.cache
+def getEmotions(img):
+    detector  = FER(mtcnn=True)
+    result = detector.detect_emotions(img)
+    data  = result[0]['emotions']
+    if data is None:
+        st.write('No result')
+        return False
     else:
-        st.error("No faces detected in the video.")
-        return None
+        return data
 
-if __name__ == '__main__':
-    main()
+st.write('This is an app to return emotions of image')
+
+file = st.sidebar.file_uploader('Please upload an image file', type = ['jpg','png'])
+
+if file is None:
+    st.write("You haven't uploaded an image file")
+else:
+    image = Image.open(file)
+    img = np.array(image)
+    st.image(image, use_column_width=True)
+    st.write(pd.DataFrame(getEmotions(img), index=[0]))
