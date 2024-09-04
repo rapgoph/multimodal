@@ -1,33 +1,40 @@
-
 import streamlit as st
-import numpy as np
-import pandas as pd
-from fer import FER
-from PIL import Image
-import cv2
+import tempfile
+import os
 
+# App Header
+st.title("Business Process and Analytics Lab: Multimodal Emotion Analysis")
 
+# Video Upload
+video_file = st.file_uploader("Upload your video file", type=["mp4", "mov", "avi"])
 
+# Display the uploaded video if it exists
+if video_file is not None:
+    # Display the video
+    st.video(video_file)
 
-@st.cache
-def getEmotions(img):
-    detector  = FER(mtcnn=True)
-    result = detector.detect_emotions(img)
-    data  = result[0]['emotions']
-    if data is None:
-        st.write('No result')
-        return False
-    else:
-        return data
+    # Save the uploaded video to a temporary file
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp_file:
+        tmp_file.write(video_file.read())
+        temp_video_path = tmp_file.name
 
-st.write('This is an app to return emotions of image')
+    # Inform the user that the video is ready for analysis
+    st.write(f"Video saved for analysis: {os.path.basename(temp_video_path)}")
 
-file = st.sidebar.file_uploader('Please upload an image file', type = ['jpg','png'])
+    # Buttons for Emotion Analysis
+    st.header("Choose Emotion Analysis Method")
+    
+    if st.button("Facial Expressions"):
+        st.write("Facial Expressions analysis will be implemented here.")
+        # Placeholder for facial expression analysis
+        # This would use temp_video_path for analysis
 
-if file is None:
-    st.write("You haven't uploaded an image file")
-else:
-    image = Image.open(file)
-    img = np.array(image)
-    st.image(image, use_column_width=True)
-    st.write(pd.DataFrame(getEmotions(img), index=[0]))
+    if st.button("Audio Intonation"):
+        st.write("Audio Intonation analysis will be implemented here.")
+        # Placeholder for audio intonation analysis
+        # This would use temp_video_path for analysis
+
+    if st.button("Textual Content"):
+        st.write("Textual Content analysis will be implemented here.")
+        # Placeholder for textual content analysis
+        # This would use temp_video_path for analysis
