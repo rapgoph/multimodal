@@ -1,62 +1,76 @@
 import streamlit as st
-import whisper_timestamped as whisper
-import tempfile
+from fer import FER
 import pandas as pd
-import subprocess
+from moviepy.editor import VideoFileClip
+import tempfile
 
 def main():
-    # Application Header
-    st.title("Business & Process Analytics Lab: Multimodal Emotion Recognition System")
+    st.title("Emotion Probability Detection")
 
-    # Section: Video Upload
-    st.header("Upload a Video for emotion analysis")
+    # Upload video file
     video_file = st.file_uploader("Upload your video file", type=["mp4", "mov", "avi"])
 
     if video_file is not None:
         # Display the uploaded video
         st.video(video_file)
-        
-        # Save the uploaded video temporarily
+
+        # Save the uploaded video to a temporary file
         with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp_file:
             tmp_file.write(video_file.read())
-            tmp_video_path = tmp_file.name
-        
-        # Transcribe the video using Whisper
-        st.header("Transcription Results")
-        transcribe_video(tmp_video_path)
+            video_path = tmp_file.name
 
-def transcribe_video(video_path):
-    try:
-        # Load the audio from the video
-        audio = whisper.load_audio(video_path)
-        
-        # Load the Whisper model
-        model = whisper.load_model("medium", device="cpu")
-        
-        # Transcribe the video/audio
-        result = whisper.transcribe(model, audio)
-        
-        # Prepare data for display
-        segments_data = [{'text': seg['text'], 'start': seg['start'], 'end': seg['end'], 'confidence': seg['confidence']}
-                         for seg in result['segments']]
+        # Button to start facial emotion recognition
+        if st.button("Facial Emotion Recognition"):
+            with st.spinner("Processing... Please wait."):
+                # Process the video to get emotion probabilities
+                emotions_df = process_video(video_path)
 
-        segments_df = pd.DataFrame(segments_data)
-        st.write(segments_df)
+            # Display the emotion probabilities
+            if emotions_df is not None:
+                st.header("Emotion Probability Scores")
+                st.dataframe(emotions_df)
+                st.download_button(
+                    label="Download Emotion Data as CSV",
+                    data=emotions_df.to_csv(index=False),
+                    file_name="emotion_probabilities.csv",
+                    mime="text/csv",
+                )
 
-        # Option to download transcription as Excel
-        excel_file = convert_df_to_excel(segments_df)
-        st.download_button(label="Download Transcription as Excel", data=excel_file, file_name="transcription.xlsx")
-    except subprocess.CalledProcessError as e:
-        st.error("An error occurred while processing the audio. Please ensure FFmpeg is installed and accessible.")
-        st.error(f"Error details: {e}")
+def process_video(video_path):
+    # Load the video using MoviePy
+    video_clip = VideoFileClip(video_path)
 
-def convert_df_to_excel(segments_df):
-    # Convert dataframe to Excel format for download
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp_file:
-        with pd.ExcelWriter(tmp_file.name) as writer:
-            segments_df.to_excel(writer, sheet_name='Segments', index=False)
-        tmp_file.seek(0)
-        return tmp_file.read()
+    # Initialize the face detection detector
+    face_detector = FER(mtcnn=True)
+
+    # Initialize DataFrame to store emotions and time
+    emotions_data = []
+
+    # Process each frame in the video
+    for frame_number, frame in enumerate(video_clip.iter_frames()):
+        # Calculate the time in seconds
+        time_seconds = frame_number / video_clip.fps
+
+        # Detect emotions in the frame
+        result = face_detector.detect_emotions(frame)
+
+        for face in result:
+            emotions = face["emotions"]
+            emotions["Time (s)"] = time_seconds  # Add time information to emotions
+            emotions_data.append(emotions)
+
+    # Create DataFrame from emotions data
+    if emotions_data:
+        emotions_df = pd.DataFrame(emotions_data)
+
+        # Rearrange columns so that "Time (s)" is the first column
+        columns = ["Time (s)"] + [col for col in emotions_df.columns if col != "Time (s)"]
+        emotions_df = emotions_df[columns]
+
+        return emotions_df
+    else:
+        st.error("No faces detected in the video.")
+        return None
 
 if __name__ == '__main__':
     main()
