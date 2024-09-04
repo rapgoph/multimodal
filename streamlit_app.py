@@ -1,43 +1,28 @@
 import streamlit as st
-from webcam import webcam
 import whisper_timestamped as whisper
 import tempfile
 import pandas as pd
 
 def main():
-    st.title("Video/Image Transcription App")
+    # Application Header
+    st.title("Business & Process Analytics Lab: Multimodal Emotion Recognition System")
 
-    # Option to upload a video or capture an image
-    st.header("Upload a video or capture an image")
-    option = st.radio("Choose an option:", ('Upload Video', 'Capture Image'))
+    # Section: Video Upload
+    st.header("Upload a Video for Transcription")
+    video_file = st.file_uploader("Upload your video file", type=["mp4", "mov", "avi"])
 
-    if option == 'Upload Video':
-        video_file = st.file_uploader("Upload your video file", type=["mp4", "mov", "avi"])
-        if video_file is not None:
-            # Display the uploaded video
-            st.video(video_file)
-            
-            # Save the uploaded video temporarily
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp_file:
-                tmp_file.write(video_file.read())
-                tmp_video_path = tmp_file.name
-            
-            # Transcribe the video using Whisper
-            st.header("Transcription Results")
-            transcribe_video(tmp_video_path)
-
-    elif option == 'Capture Image':
-        captured_image = webcam()
-        if captured_image is None:
-            st.write("Waiting for capture...")
-        else:
-            st.write("Got an image from the webcam:")
-            st.image(captured_image)
-            # Save image temporarily
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp_file:
-                captured_image.save(tmp_file.name)
-                tmp_image_path = tmp_file.name
-            # You can now process this image or display it further
+    if video_file is not None:
+        # Display the uploaded video
+        st.video(video_file)
+        
+        # Save the uploaded video temporarily
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp_file:
+            tmp_file.write(video_file.read())
+            tmp_video_path = tmp_file.name
+        
+        # Transcribe the video using Whisper
+        st.header("Transcription Results")
+        transcribe_video(tmp_video_path)
 
 def transcribe_video(video_path):
     # Load the audio from the video
