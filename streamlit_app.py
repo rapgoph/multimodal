@@ -3,7 +3,7 @@ import tempfile
 import os
 
 def main():
-    st.title("Welcome! This is the Multimodal Emotion Recognition App! - Raphael and 명한!")
+    st.title("Welcome! This is the Multimodal Emotion Recognition App! - Raphael and 명환!")
 
     # File uploader allows users to upload a video file
     video_file = st.file_uploader("Upload a video", type=["mp4", "mov", "avi"])
