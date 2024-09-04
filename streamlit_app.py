@@ -1,40 +1,41 @@
 import streamlit as st
-from fer import FER
+import numpy as np
 import pandas as pd
+from fer import FER
 from moviepy.editor import VideoFileClip
 import tempfile
 
-def main():
-    st.title("Emotion Probability Detection")
+# Application Header
+st.title("Business and Process Analytics Lab: Multimodal Emotion Recognition Analysis")
 
-    # Upload video file
-    video_file = st.file_uploader("Upload your video file", type=["mp4", "mov", "avi"])
+# Upload video file
+video_file = st.file_uploader("Upload your video file", type=["mp4", "mov", "avi"])
 
-    if video_file is not None:
-        # Display the uploaded video
-        st.video(video_file)
+# Button to detect facial emotions
+if video_file is not None:
+    # Display the uploaded video
+    st.video(video_file)
 
-        # Save the uploaded video to a temporary file
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp_file:
-            tmp_file.write(video_file.read())
-            video_path = tmp_file.name
+    # Save the uploaded video to a temporary file
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp_file:
+        tmp_file.write(video_file.read())
+        video_path = tmp_file.name
 
-        # Button to start facial emotion recognition
-        if st.button("Facial Emotion Recognition"):
-            with st.spinner("Processing... Please wait."):
-                # Process the video to get emotion probabilities
-                emotions_df = process_video(video_path)
+    if st.button("Detect Facial Emotions"):
+        with st.spinner("Processing... Please wait."):
+            # Process the video to get emotion probabilities
+            emotions_df = process_video(video_path)
 
-            # Display the emotion probabilities
-            if emotions_df is not None:
-                st.header("Emotion Probability Scores")
-                st.dataframe(emotions_df)
-                st.download_button(
-                    label="Download Emotion Data as CSV",
-                    data=emotions_df.to_csv(index=False),
-                    file_name="emotion_probabilities.csv",
-                    mime="text/csv",
-                )
+        # Display the emotion probabilities
+        if emotions_df is not None:
+            st.header("Emotion Probability Scores per Second")
+            st.dataframe(emotions_df)
+            st.download_button(
+                label="Download Emotion Data as CSV",
+                data=emotions_df.to_csv(index=False),
+                file_name="emotion_probabilities.csv",
+                mime="text/csv",
+            )
 
 def process_video(video_path):
     # Load the video using MoviePy
